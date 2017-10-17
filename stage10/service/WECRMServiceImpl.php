@@ -88,31 +88,18 @@ class WECRMServiceImpl implements WECRMService {
 
     /**
      * @access public
-     * @param string name
      * @param String email
-     * @param String password
-     * @ParamType name string
-     * @ParamType email String
-     * @ParamType password String
-     */
-    public function registerAgent($name, $email, $password) {
-        $agent = new Agent();
-        $agent->setName($email);
-        $agent->setEmail($password);
-        $agent->setPassword(password_hash($password, PASSWORD_DEFAULT));
-        $agentDAO = new AgentDAO();
-        $agentDAO->create($agent);
-    }
-
-    /**
-     * @access public
      * @return Agent
+     * @ParamType email String
      * @ReturnType Agent
      */
-    public function readAgent() {
+    public function readAgent($email = null) {
         if($this->verifyAuth()) {
             $agentDAO = new AgentDAO();
             return $agentDAO->read($this->currentAgentId);
+        } elseif (isset($email)){
+            $agentDAO = new AgentDAO();
+            return $agentDAO->findByEmail($email);
         }
         return null;
     }
@@ -122,19 +109,33 @@ class WECRMServiceImpl implements WECRMService {
      * @param string name
      * @param String email
      * @param String password
+     * @return boolean
+     * @ParamType name string
      * @ParamType email String
      * @ParamType password String
-     * @ParamType name string
+     * @ReturnType boolean
      */
     public function editAgent($name, $email, $password) {
+        $agent = new Agent();
+        $agent->setName($name);
+        $agent->setEmail($email);
+        $agent->setPassword(password_hash($password, PASSWORD_DEFAULT));
+        $agentDAO = new AgentDAO();
         if($this->verifyAuth()) {
-            $agent = new Agent();
             $agent->setId($this->currentAgentId);
-            $agent->setName($name);
-            $agent->setEmail($email);
-            $agent->setPassword(password_hash($password, PASSWORD_DEFAULT));
-            $agentDAO = new AgentDAO();
+            if($agentDAO->read($this->currentAgentId)->getEmail() !== $agent->getEmail()) {
+                if (!is_null($agentDAO->findByEmail($email))) {
+                    return false;
+                }
+            }
             $agentDAO->update($agent);
+            return true;
+        }else{
+            if(!is_null($agentDAO->findByEmail($email))){
+                return false;
+            }
+            $agentDAO->create($agent);
+            return true;
         }
     }
 
@@ -214,25 +215,15 @@ class WECRMServiceImpl implements WECRMService {
     /**
      * @access public
      * @param String token
-     * @param int type
      * @return boolean
      * @ParamType token String
-     * @ParamType type int
      * @ReturnType boolean
      */
-    public function validateToken($token, $type = self::AGENT_TOKEN) {
-        switch ($type){
-            case self::AGENT_TOKEN :
-                $tokenArray = explode(":", $token);
-                if(count($tokenArray)>1) {
-                    $this->currentAgentId = $tokenArray[0];
-                    return true;
-                }
-                break;
-            case self::RESET_TOKEN :
-                break;
-            case self::JWT_TOKEN :
-                break;
+    public function validateToken($token) {
+        $tokenArray = explode(":", $token);
+        if(count($tokenArray)>1) {
+            $this->currentAgentId = $tokenArray[0];
+            return true;
         }
         return false;
     }
@@ -240,17 +231,17 @@ class WECRMServiceImpl implements WECRMService {
     /**
      * @access public
      * @param int type
+     * @param String email
      * @return String
      * @ParamType type int
+     * @ParamType email String
      * @ReturnType String
      */
-    public function issueToken($type = self::AGENT_TOKEN) {
+    public function issueToken($type = self::AGENT_TOKEN, $email = null) {
         switch ($type){
             case self::AGENT_TOKEN :
                 return $this->currentAgentId .":". bin2hex(random_bytes(20));
             case self::RESET_TOKEN :
-                break;
-            case self::JWT_TOKEN :
                 break;
         }
         return null;

@@ -8,6 +8,7 @@
 
 namespace service;
 
+use domain\Agent;
 use domain\Customer;
 
 /**
@@ -23,10 +24,6 @@ interface WECRMService {
      * @AttributeType int
      */
     const RESET_TOKEN = 2;
-    /**
-     * @AttributeType int
-     */
-    const JWT_TOKEN = 3;
 
     /**
      * @access public
@@ -41,30 +38,23 @@ interface WECRMService {
 
     /**
      * @access public
-     * @param string name
      * @param String email
-     * @param String password
-     * @ParamType name string
-     * @ParamType email String
-     * @ParamType password String
-     */
-    public function registerAgent($name, $email, $password);
-
-    /**
-     * @access public
      * @return Agent
+     * @ParamType email String
      * @ReturnType Agent
      */
-    public function readAgent();
+    public function readAgent($email = null);
 
     /**
      * @access public
      * @param string name
      * @param String email
      * @param String password
+     * @return boolean
+     * @ParamType name string
      * @ParamType email String
      * @ParamType password String
-     * @ParamType name string
+     * @ReturnType boolean
      */
     public function editAgent($name, $email, $password);
 
@@ -112,20 +102,20 @@ interface WECRMService {
     /**
      * @access public
      * @param String token
-     * @param int type
      * @return boolean
      * @ParamType token String
-     * @ParamType type int
      * @ReturnType boolean
      */
-    public function validateToken($token, $type = self::AGENT_TOKEN);
+    public function validateToken($token);
 
     /**
      * @access public
      * @param int type
+     * @param String email
      * @return String
      * @ParamType type int
+     * @ParamType email String
      * @ReturnType String
      */
-    public function issueToken($type = self::AGENT_TOKEN);
+    public function issueToken($type = self::AGENT_TOKEN, $email = null);
 }
